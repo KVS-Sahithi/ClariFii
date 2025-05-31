@@ -1,7 +1,6 @@
 import 'dart:developer';
 
 import 'package:auth_firebase/auth/auth_service.dart';
-import 'package:auth_firebase/auth/login_screen.dart';
 import 'package:auth_firebase/widgets/home_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -15,17 +14,17 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final _auth = AuthService();
 
-  final _name = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
+  final _age = TextEditingController();
 
   String? errorMessage;
 
   @override
   void dispose() {
-    _name.dispose();
     _email.dispose();
     _password.dispose();
+    _age.dispose();
     super.dispose();
   }
 
@@ -38,19 +37,12 @@ class _SignupScreenState extends State<SignupScreen> {
           children: [
             const Spacer(),
             const Text(
-              "Signup",
+              "Sign Up",
               style: TextStyle(fontSize: 40, fontWeight: FontWeight.w500),
             ),
-            const SizedBox(height: 50),
-            TextField(
-              controller: _name,
-              decoration: const InputDecoration(
-                labelText: "Name",
-                hintText: "Enter Name",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 40),
+
+            // Email
             TextField(
               controller: _email,
               decoration: const InputDecoration(
@@ -61,6 +53,8 @@ class _SignupScreenState extends State<SignupScreen> {
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 20),
+
+            // Password
             TextField(
               controller: _password,
               decoration: const InputDecoration(
@@ -70,47 +64,40 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               obscureText: true,
             ),
+            const SizedBox(height: 20),
+
+            // Age
+            TextField(
+              controller: _age,
+              decoration: const InputDecoration(
+                labelText: "Age",
+                hintText: "Enter your age",
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+            ),
             const SizedBox(height: 10),
+
             if (errorMessage != null)
               Text(
                 errorMessage!,
                 style: const TextStyle(color: Colors.red),
               ),
+
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _signup,
-              child: const Text("Signup"),
+              child: const Text("Sign Up"),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 50),
               ),
             ),
-            const SizedBox(height: 5),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text("Already have an account? "),
-                InkWell(
-                  onTap: () => goToLogin(context),
-                  child: const Text(
-                    "Login",
-                    style: TextStyle(color: Colors.red),
-                  ),
-                )
-              ],
-            ),
-            const Spacer()
+            const Spacer(),
           ],
         ),
       ),
-    );
-  }
-
-  void goToLogin(BuildContext context) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
     );
   }
 
@@ -124,21 +111,36 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _signup() async {
     setState(() => errorMessage = null);
 
-    if (_name.text.trim().isEmpty ||
-        _email.text.trim().isEmpty ||
-        _password.text.trim().isEmpty) {
-      setState(() => errorMessage = "All fields are required");
+    final email = _email.text.trim();
+    final password = _password.text.trim();
+    final ageText = _age.text.trim();
+
+    if (email.isEmpty || password.isEmpty || ageText.isEmpty) {
+      setState(() => errorMessage = "All fields are required.");
+      return;
+    }
+
+    int? age = int.tryParse(ageText);
+    if (age == null || age <= 0) {
+      setState(() => errorMessage = "Please enter a valid age.");
       return;
     }
 
     try {
-      final user = await _auth.createUserWithEmailAndPassword(
-        _email.text.trim(),
-        _password.text.trim(),
-      );
+      final user = await _auth.createUserWithEmailAndPassword(email, password);
+
       if (user != null) {
-        log("User Created Successfully");
+        log("User Registered with age: $age");
+
+        // Optional: Store age in Firestore if needed
+        // await FirebaseFirestore.instance.collection("users").doc(user.uid).set({
+        //   "email": email,
+        //   "age": age,
+        // });
+
         goToHome(context);
+      } else {
+        setState(() => errorMessage = "Signup failed. Try again.");
       }
     } catch (e) {
       setState(() => errorMessage = e.toString());

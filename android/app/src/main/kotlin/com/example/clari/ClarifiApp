@@ -1,0 +1,31 @@
+package com.example.clari
+
+import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
+import com.google.firebase.FirebaseApp
+
+class ClarifiApp : Application() {
+
+    override fun onCreate() {
+        super.onCreate()
+        FirebaseApp.initializeApp(this)
+        createNotificationChannel()  
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "clarifi_channel",
+                "Clarifi Alerts",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Channel for Clarifi push notifications"
+            }
+
+            val manager = getSystemService(NotificationManager::class.java)
+            manager?.createNotificationChannel(channel)
+        }
+    }
+}
